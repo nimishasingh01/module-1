@@ -1,0 +1,187 @@
+KSDS creation: 
+//CAPGD37A JOB 123,SYFUL,MSGLEVEL=(1,1),NOTIFY=&SYSUID                  00010000 
+//*                                                                     00020000 
+//*CREATE KSDS CLUSTER                                                  00030000 
+//STEP01   EXEC PGM=IDCAMS                                              00040000 
+//SYSPRINT DD SYSOUT=*                                                  00050000 
+//SYSOUT   DD SYSOUT=*                                                  00060000 
+//SYSIN    DD *                                                         00070000 
+   DEFINE CLUSTER(NAME(CAPGD37.MODULE2.ABCNEW)-                         00080000 
+   KEYS(6 0)-                                                           00090000 
+   TRK(10 10)-                                                          00100000 
+   RECSZ(80 80)-                                                        00110000 
+   INDEXED-                                                             00120000 
+   VOLUME(DEVHD3))                                                      00130000 
+/*                                                                      00140000 
+//*REPRO TO KSDS                                                        00420000 
+//STEP02   EXEC PGM=IDCAMS                                              00430001 
+//SYSPRINT DD SYSOUT=*                                                  00440000 
+//SYSOUT   DD SYSOUT=*                                                  00450000 
+//SYSIN    DD *                                                         00460000 
+   REPRO-                                                               00470000 
+   IDS(CAPGD37.MODULE2.TEMP)-                                           00480001 
+   ODS(CAPGD37.MODULE2.ABCNEW)                                          00490000 
+/*                                                                      00500000 
+//                                                                      00510000 
+COBRUN: 
+//CAPGD37D JOB MSGLEVEL=(1,1),NOTIFY=&SYSUID        
+//*                                                 
+//*  RUN A COBOL PROGRAM                            
+//*                                                 
+//STEP01  EXEC PGM=LOYALBNS                         
+//STEPLIB  DD  DSN=CAPGD37.LOADLIB,DISP=SHR         
+//SYSOUT   DD  SYSOUT=*                             
+//CUSTDD   DD  DSN=CAPGD37.MODULE2.CUSTOLD,DISP=SHR 
+//KSDD     DD  DSN=CAPGD37.MODULE2.ABCNEW,DISP=SHR  
+//RPTDD    DD  SYSOUT=*                             
+COBOL PGM: 
+       IDENTIFICATION DIVISION.                                         00010000 
+        PROGRAM-ID. LOYALBNS.                                           00020000 
+       ENVIRONMENT DIVISION.                                            00030000 
+        INPUT-OUTPUT SECTION.                                           00040000 
+         FILE-CONTROL.                                                  00050000 
+              SELECT CUST-FILE ASSIGN TO CUSTDD                         00051001 
+              FILE STATUS IS WS-CUST-FS.                                00052001 
+              SELECT RPT-FILE ASSIGN TO RPTDD                           00053001 
+              FILE STATUS IS WS-RPT-FS.                                 00054001 
+              SELECT KSDS-FILE ASSIGN TO KSDD                           00055001 
+              ORGANIZATION IS INDEXED                                   00056001 
+              ACCESS MODE IS DYNAMIC                                    00057001 
+              RECORD KEY IS KS-ACC-NO                                   00058001 
+              FILE STATUS IS WS-KS-FS.                                  00059001 
+       DATA DIVISION.                                                   00060000 
+        FILE SECTION.                                                   00070000 
+        FD CUST-FILE                                                    00071001 
+             RECORDING MODE IS F.                                       00072001 
+        01 CUST-REC.                                                    00073001 
+           04 CUST-ACC-NO   PIC X(6).                                   00074001 
+           04 CUST-NAME     PIC X(20).                                  00075001 
+           04 CUST-CURR-BAL PIC 9(6).                                   00076001 
+           04 FILLER        PIC X(48).                                  00077001 
+        FD KSDS-FILE.                                                   00078001 
+        01 KSDS-REC.                                                    00079001 
+           04 KS-ACC-NO   PIC X(6).                                     00079101 
+           04 KS-NAME     PIC X(20).                                    00079201 
+           04 KS-CURR-BAL PIC 9(6).                                     00079301 
+           04 FILLER        PIC X(48).                                  00079401 
+        FD RPT-FILE                                                     00079501 
+              RECORDING MODE IS F.                                      00079601 
+        01 RPT-REC          PIC X(80).                                  00079701 
+        WORKING-STORAGE SECTION.                                        00080000 
+        01 WS-CUST-FS       PIC XX.                                     00081001 
+        01 WS-KS-FS         PIC XX.                                     00082008 
+        01 WS-RPT-FS        PIC XX.                                     00083001 
+        01 WS-EOF           PIC X VALUE 'N'.                            00084001 
+        01 WS-TEMP          PIC X(6).                                   00084108 
+        01 MAIN-HEADER1.                                                00085001 
+           02 FILLER PIC X(25) VALUE SPACES.                            00085101 
+           02 FILLER PIC X(30) VALUE 'ABC BANKING SERVICES PVT LTD.'.   00086001 
+           02 FILLER PIC X(25) VALUE SPACES.                            00087001 
+        01 MAIN-HEADER2.                                                00088001 
+           02 FILLER PIC X(30) VALUE SPACES.                            00088101 
+           02 FILLER PIC X(20) VALUE 'LOYALTY BONUS REPORT'.            00089001 
+           02 FILLER PIC X(30) VALUE SPACES.                            00089101 
+        01 DOT-LINE PIC X(80) VALUE ALL '-'.                            00089201 
+        01 DATA-HEADER.                                                 00089301 
+           02 FILLER PIC X(10) VALUE 'ACCOUNT NO'.                      00089401 
+           02 FILLER PIC X(3) VALUE SPACES.                             00089601 
+           02 FILLER PIC X(13) VALUE 'CUSTOMER NAME'.                   00089701 
+           02 FILLER PIC X(3) VALUE SPACES.                             00089801 
+           02 FILLER PIC X(4) VALUE 'TYPE'.                             00089901 
+           02 FILLER PIC X(3) VALUE SPACES.                             00090001 
+           02 FILLER PIC X(15) VALUE 'CURRENT BALANCE'.                 00090101 
+           02 FILLER PIC X(3) VALUE SPACES.                             00090201 
+           02 FILLER PIC X(8) VALUE 'LOYALITY'.                         00090301 
+           02 FILLER PIC X(3) VALUE SPACES.                             00090401 
+           02 FILLER PIC X(15) VALUE 'UPDATED BALANCE'.                 00090501 
+        01 DATA-INPUT.                                                  00090601 
+           02 WS-CUST-NO PIC X(6).                                      00090701 
+           02 FILLER PIC X(2) VALUE SPACES.                             00090801 
+           02 WS-CUST-NAME PIC X(20).                                   00090901 
+           02 FILLER PIC X(1) VALUE SPACES.                             00091001 
+           02 WS-CUST-TYPE PIC X(3).                                    00091101 
+           02 FILLER PIC X(4) VALUE SPACES.                             00091201 
+           02 WS-CUST-CBAL PIC 9(6).                                    00091301 
+           02 FILLER PIC X(12) VALUE SPACES.                            00091401 
+           02 WS-CUST-BNS PIC 9(4).                                     00091501 
+           02 FILLER PIC X(7) VALUE SPACES.                             00091601 
+           02 WS-CUST-UBAL PIC 9(6).                                    00091701 
+        01 TOTAL-LINE.                                                  00091801 
+           02 FILLER PIC X(31) VALUE SPACES.                            00091901 
+           02 FILLER PIC X(22) VALUE 'TOTAL LOYALITY GIVEN:'.           00092001 
+           02 WS-TOTAL PIC 9(6) VALUE 0.                                00092101 
+        01 WS-LOYAL PIC 9(6).                                           00092201 
+        LINKAGE SECTION.                                                00093000 
+       PROCEDURE DIVISION.                                              00100000 
+       1000-MAIN-PARA.                                                  00110001 
+            OPEN INPUT CUST-FILE.                                       00120001 
+            OPEN INPUT KSDS-FILE.                                       00130001 
+            OPEN OUTPUT RPT-FILE.                                       00140001 
+            PERFORM WRITE-REC1-PARA                                     00140101 
+            EVALUATE WS-CUST-FS                                         00141010 
+             WHEN '00'                                                  00142001 
+              PERFORM READ-REC-PARA UNTIL WS-EOF = 'Y'                  00143010 
+             WHEN '10'                                                  00144010 
+              DISPLAY 'END OF FILE'                                     00145005 
+             WHEN OTHER                                                 00146001 
+              DISPLAY 'FILE ERROR:' WS-CUST-FS                          00147005 
+            END-EVALUATE.                                               00148001 
+            PERFORM WRITE-REC2-PARA                                     00149001 
+            CLOSE CUST-FILE.                                            00150001 
+            CLOSE KSDS-FILE.                                            00160001 
+            CLOSE RPT-FILE.                                             00170001 
+            STOP RUN.                                                   00180001 
+       READ-REC-PARA.                                                   00190001 
+            READ CUST-FILE.                                             00200005 
+            EVALUATE WS-CUST-FS                                         00210005 
+             WHEN '00'                                                  00220001 
+              PERFORM CUST-REC-CHECK-PARA                               00230010 
+             WHEN '10'                                                  00240005 
+               MOVE 'Y' TO WS-EOF                                       00250010 
+              DISPLAY 'END OF FILE'                                     00260001 
+             WHEN OTHER                                                 00270001 
+              DISPLAY 'FILE ERROR: ' WS-CUST-FS                         00280001 
+            END-EVALUATE.                                               00290001 
+            EXIT.                                                       00300001 
+       CUST-REC-CHECK-PARA.                                             00310005 
+            READ KSDS-FILE KEY IS KS-ACC-NO                             00311010 
+            MOVE CUST-ACC-NO TO KS-ACC-NO                               00330010 
+            EVALUATE WS-KS-FS                                           00340010 
+             WHEN '00'                                                  00350001 
+               COMPUTE WS-LOYAL = 0.05 * KS-CURR-BAL                    00351005 
+               MOVE 'OLD' TO WS-CUST-TYPE                               00352005 
+               PERFORM LOYALBNS-PARA                                    00360005 
+             WHEN '23'                                                  00361010 
+               COMPUTE WS-LOYAL = 0.02 * KS-CURR-BAL                    00362005 
+               MOVE 'NEW' TO WS-CUST-TYPE                               00363005 
+               PERFORM LOYALBNS-PARA                                    00364005 
+             WHEN OTHER                                                 00390001 
+              DISPLAY 'KSDS FILE ERROR: ' WS-KS-FS                      00400001 
+            END-EVALUATE.                                               00410001 
+            EXIT.                                                       00420001 
+       LOYALBNS-PARA.                                                   00430001 
+            COMPUTE WS-CUST-UBAL = WS-CUST-CBAL + WS-LOYAL              00450004 
+            COMPUTE WS-TOTAL = WS-TOTAL + WS-LOYAL                      00451001 
+            MOVE KS-ACC-NO TO WS-CUST-NO                                00460001 
+            MOVE KS-NAME TO WS-CUST-NAME                                00470001 
+            MOVE KS-CURR-BAL TO WS-CUST-CBAL                            00490004 
+            MOVE WS-LOYAL TO WS-CUST-BNS                                00500001 
+            WRITE RPT-REC FROM DATA-INPUT.                              00510001 
+            EXIT.                                                       00511011 
+       WRITE-REC1-PARA.                                                 00520001 
+            WRITE RPT-REC FROM MAIN-HEADER1.                            00521004 
+            WRITE RPT-REC FROM MAIN-HEADER2.                            00522004 
+            WRITE RPT-REC FROM DOT-LINE.                                00523004 
+            WRITE RPT-REC FROM DATA-HEADER.                             00524004 
+            WRITE RPT-REC FROM DOT-LINE.                                00525004 
+       WRITE-REC2-PARA.                                                 00530001 
+            WRITE RPT-REC FROM DOT-LINE.                                00540004 
+            WRITE RPT-REC FROM TOTAL-LINE.                              00560004 
+            WRITE RPT-REC FROM DOT-LINE.                                00570004 
+ 
+ 
+ 
+ 
+Output: 
+ 
+
